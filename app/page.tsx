@@ -1,14 +1,16 @@
 "use client";
 import { useState } from "react";
 import generatePlan from "@/app/api/agent";
+import { Plan } from "@/types/week";
+import Week from "./components/Week";
 
 type Ability = "beginner" | "novice" | "confident";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  const [plan, setPlan] = useState<string | null | undefined>(null);
+  const [plan, setPlan] = useState<Plan | null | undefined>(null);
   const [ability, setAbility] = useState<Ability>("beginner");
-  const [weeks, setWeeks] = useState<number>(1);
+  const [weeks, setWeeks] = useState<number>(4);
 
   const options: { label: string; value: Ability }[] = [
     { label: "beginner", value: "beginner" },
@@ -65,7 +67,13 @@ export default function Home() {
         </button>
       </form>
 
-      <div>{plan ?? <p>{plan}</p>}</div>
+      {plan && (
+        <div>
+          {plan.weeks.map((week) => (
+            <Week key={week.id} week={week} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
