@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-// import { useRouter } from "next/navigation";
 
 import { SubmitButton } from "../components/SubmitButton";
 import { generatePlanAction } from "@/app/actions/generatePlan";
@@ -8,7 +7,6 @@ import { generatePlanAction } from "@/app/actions/generatePlan";
 type Ability = "beginner" | "novice" | "confident";
 
 export default function Questions() {
-  //   const router = useRouter();
   const [ability, setAbility] = useState<Ability>("beginner");
   const [weeks, setWeeks] = useState<number>(4);
 
@@ -17,12 +15,6 @@ export default function Questions() {
     { label: "par-boiled", value: "novice" },
     { label: "hot chip", value: "confident" },
   ];
-
-  //   async function handleSubmit(e: React.FormEvent) {
-  //     e.preventDefault();
-
-  //     router.push(`/plan?ability=${ability}&weeks=${weeks}`);
-  //   }
 
   return (
     <main>
@@ -59,13 +51,6 @@ export default function Questions() {
             required
           />
         </label>
-        {/* <button
-          type="submit"
-          //   disabled={loading}
-          className="bg-blue-400 p-1 m-1 rounded-sm"
-        >
-          Generate Plan
-        </button> */}
         <SubmitButton />
       </form>
     </main>
