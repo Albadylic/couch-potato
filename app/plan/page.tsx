@@ -29,11 +29,11 @@ export default async function PlanPage({ searchParams }: Props) {
     <main className="max-w-xl mx-auto py-12">
       <h1 className="text-2xl font-bold mb-4">Your Plan</h1>
 
-      <p className="mb-4">
+      {/* <p className="mb-4">
         Ability: <strong>{ability}</strong>
         <br />
         Duration: <strong>{weeks} weeks</strong>
-      </p>
+      </p> */}
 
       <Suspense fallback={<p>Generating plan...</p>}>
         {plan && (
