@@ -1,31 +1,37 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
+
+import generatePlan from "@/lib/agent";
+import { Plan } from "@/types/week";
+import Week from "./components/Week";
 
 type Ability = "beginner" | "novice" | "confident";
 
-export default function Questions() {
-  const router = useRouter();
+export default function Home() {
+  const [loading, setLoading] = useState(false);
+  const [plan, setPlan] = useState<Plan | null | undefined>(null);
   const [ability, setAbility] = useState<Ability>("beginner");
   const [weeks, setWeeks] = useState<number>(4);
 
   const options: { label: string; value: Ability }[] = [
-    { label: "coach potato", value: "beginner" },
-    { label: "par-boiled", value: "novice" },
-    { label: "hot chip", value: "confident" },
+    { label: "beginner", value: "beginner" },
+    { label: "novice", value: "novice" },
+    { label: "confident", value: "confident" },
   ];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
 
-    router.push(`/plan?ability=${ability}&weeks=${weeks}`);
+    const text = await generatePlan(ability, weeks);
+    setPlan(text);
+
+    setLoading(false);
   }
 
   return (
-    <main>
-      <h2 className="text-2xl font-bold mb-6">
-        Tell us about your current fitness...
-      </h2>
+    <div>
       <form onSubmit={handleSubmit}>
         <fieldset>
           <legend>Current ability:</legend>
@@ -43,12 +49,11 @@ export default function Questions() {
             </label>
           ))}
         </fieldset>
-
         <label>
-          Weeks of training
+          {" "}
+          Weeks:
           <input
             type="number"
-            className="w-full border px-3 py-2"
             min={1}
             value={weeks}
             onChange={(e) => setWeeks(Number(e.target.value))}
@@ -57,12 +62,20 @@ export default function Questions() {
         </label>
         <button
           type="submit"
-          //   disabled={loading}
+          disabled={loading}
           className="bg-blue-400 p-1 m-1 rounded-sm"
         >
-          Generate Plan
+          {loading ? "Generating…" : "Generate"}
         </button>
       </form>
-    </main>
+
+      {plan && (
+        <div>
+          {plan.weeks.map((week) => (
+            <Week key={week.id} week={week} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

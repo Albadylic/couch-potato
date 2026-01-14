@@ -3,7 +3,7 @@
 import { Agent, run } from "@openai/agents";
 import { Plan } from "@/types/week";
 
-import buildPrompt from "./buildPrompt";
+import buildPrompt from "../app/api/buildPrompt";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set");
@@ -21,7 +21,6 @@ async function generatePlan(
   const result = await run(agent, buildPrompt(ability, weeks));
 
   if (result.finalOutput) {
-    console.log(result.finalOutput);
     return JSON.parse(result.finalOutput) as Plan;
   }
 }
