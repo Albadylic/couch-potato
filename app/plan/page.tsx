@@ -7,6 +7,7 @@ type Props = {
   searchParams: {
     ability?: string;
     weeks?: string;
+    frequency?: string;
   };
 };
 
@@ -14,8 +15,9 @@ export default async function PlanPage({ searchParams }: Props) {
   const params = await searchParams;
   const ability = params.ability ?? "beginner";
   const weeks = Number(params.weeks ?? 8);
+  const frequency = Number(params.frequency ?? 3);
 
-  const plan: Plan | undefined = await generatePlan(ability, weeks);
+  const plan: Plan | undefined = await generatePlan(ability, weeks, frequency);
 
   if (!plan) {
     return (

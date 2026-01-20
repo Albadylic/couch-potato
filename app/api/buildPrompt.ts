@@ -1,4 +1,8 @@
-export default function buildPrompt(ability: string, weeks: number) {
+export default function buildPrompt(
+  ability: string,
+  weeks: number,
+  frequency: number
+) {
   return `
 
 Return ONLY valid JSON.
@@ -24,6 +28,6 @@ The JSON must follow this exact schema:
   ]
 }
 
-Generate a couch to 5K plan for a ${ability} runner to complete within ${weeks} weeks.
+Generate a couch to 5K plan for a ${ability} runner to complete within ${weeks} weeks. Include a maximum of ${frequency} days each week.
 `;
 }
