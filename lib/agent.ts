@@ -16,9 +16,10 @@ const agent = new Agent({
 
 async function generatePlan(
   ability: string,
-  weeks: number
+  weeks: number,
+  frequency: number
 ): Promise<Plan | undefined> {
-  const result = await run(agent, buildPrompt(ability, weeks));
+  const result = await run(agent, buildPrompt(ability, weeks, frequency));
 
   if (result.finalOutput) {
     return JSON.parse(result.finalOutput) as Plan;

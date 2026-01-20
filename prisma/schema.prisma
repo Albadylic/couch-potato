@@ -1,0 +1,14 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Plan {
+  id        String   @id @default(uuid())
+  weeks     Json
+  userId    String?
+  createdAt DateTime @default(now())
+}

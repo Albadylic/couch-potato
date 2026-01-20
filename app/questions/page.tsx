@@ -9,6 +9,7 @@ type Ability = "beginner" | "novice" | "confident";
 export default function Questions() {
   const [ability, setAbility] = useState<Ability>("beginner");
   const [weeks, setWeeks] = useState<number>(4);
+  const [frequency, setFrequency] = useState<number>(1);
 
   const options: { label: string; value: Ability }[] = [
     { label: "coach potato", value: "beginner" },
@@ -48,6 +49,20 @@ export default function Questions() {
             min={1}
             value={weeks}
             onChange={(e) => setWeeks(Number(e.target.value))}
+            required
+          />
+        </label>
+
+        <label>
+          Activities each week
+          <input
+            type="number"
+            className="w-full border px-3 py-2"
+            name="frequency"
+            min={1}
+            max={6}
+            value={frequency}
+            onChange={(e) => setFrequency(Number(e.target.value))}
             required
           />
         </label>
