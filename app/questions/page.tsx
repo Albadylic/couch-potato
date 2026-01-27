@@ -12,7 +12,7 @@ export default function Questions() {
   const [frequency, setFrequency] = useState<number>(1);
 
   const options: { label: string; value: Ability }[] = [
-    { label: "coach potato", value: "beginner" },
+    { label: "couch potato", value: "beginner" },
     { label: "par-boiled", value: "novice" },
     { label: "hot chip", value: "confident" },
   ];

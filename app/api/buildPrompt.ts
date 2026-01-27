@@ -16,13 +16,15 @@ The JSON must follow this exact schema:
     {
       "id": number,
       "days": [
-        "id": number,
-        "day": string,
-        "distance": number,
-        "jogging-interval-time": number,
-        "walking-intervals-time": number,
-        "number-of-intervals": number,
-        "instructions": string[]
+        {
+          "id": number,
+          "day": string,
+          "distance": number,
+          "jogging-interval-time": number,
+          "walking-intervals-time": number,
+          "number-of-intervals": number,
+          "instructions": string[]
+        }
       ]
     }
   ]

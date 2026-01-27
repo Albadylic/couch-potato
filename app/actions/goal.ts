@@ -1,3 +1,5 @@
+"use server";
+
 export async function continueGoalConversation(
   messages: { role: "user" | "agent"; content: string }[]
 ) {
