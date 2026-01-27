@@ -8,7 +8,7 @@ export default function Day({ day }: { day: DayType }) {
       <div className="flex justify-between m-2 border rounded">
         <p className="p-2">jog: {day["jogging-interval-time"]}</p>
         <p className="p-2">walk: {day["walking-intervals-time"]}</p>
-        <p className="p-2">intervals: {day["walking-intervals-time"]}</p>
+        <p className="p-2">intervals: {day["number-of-intervals"]}</p>
       </div>
       <ul>
         {day.instructions.map((item, index) => (

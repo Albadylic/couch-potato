@@ -10,7 +10,7 @@ export default function Home() {
       </p>
 
       <Link
-        href="/questions"
+        href="/goal"
         className="rounded bg-black px-6 py-3 text-white hover:bg-gray-800"
       >
         Get Started
