@@ -1,21 +1,12 @@
 "use server";
 
-export async function continueGoalConversation(
-  messages: { role: "user" | "agent"; content: string }[]
-) {
-  /**
-   * 1. Send messages to AI agent
-   * 2. Ask it to:
-   *    - Ask the next best question
-   *    - Extract structured goal data so far
-   */
+import { processGoalConversation } from "@/lib/goalAgent";
+import { Tone, Goal, Message, GoalAgentResponse } from "@/types/goal";
 
-  return {
-    reply: "Great. How much time per week can you realistically commit?",
-    goal: {
-      area: "health",
-      outcome: "Run a 5K",
-    },
-    isComplete: false,
-  };
+export async function continueGoalConversation(
+  messages: Message[],
+  tone: Tone,
+  currentGoal: Goal
+): Promise<GoalAgentResponse> {
+  return processGoalConversation(messages, tone, currentGoal);
 }
