@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import generatePlan from "@/lib/agent";
 import { Plan } from "@/types/week";
-import PlanViewer from "../components/PlanViewer";
+import PlanViewerWithStorage from "../components/PlanViewerWithStorage";
+import { SavedPlanGoal } from "@/lib/planStorage";
 
 type Props = {
   searchParams: {
@@ -35,7 +36,16 @@ async function PlanContent({
     return <p>Failed to generate plan.</p>;
   }
 
-  return <PlanViewer plan={plan} />;
+  const goal: SavedPlanGoal = {
+    distance,
+    weeks,
+    ability,
+    frequency,
+    unavailableDays,
+    injuries,
+  };
+
+  return <PlanViewerWithStorage plan={plan} goal={goal} />;
 }
 
 export default async function PlanPage({ searchParams }: Props) {
