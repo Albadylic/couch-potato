@@ -9,12 +9,20 @@ export default function Home() {
         Build a personalized running plan in minutes.
       </p>
 
-      <Link
-        href="/goal"
-        className="rounded bg-black px-6 py-3 text-white hover:bg-gray-800"
-      >
-        Get Started
-      </Link>
+      <div className="flex gap-4">
+        <Link
+          href="/goal"
+          className="rounded bg-black px-6 py-3 text-white hover:bg-gray-800"
+        >
+          Get Started
+        </Link>
+        <Link
+          href="/plans"
+          className="rounded border border-gray-300 px-6 py-3 text-gray-700 hover:border-gray-400"
+        >
+          My Plans
+        </Link>
+      </div>
     </main>
   );
 }

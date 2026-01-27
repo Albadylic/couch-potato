@@ -12,7 +12,15 @@ type SelectedDay = {
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-export default function PlanViewer({ plan }: { plan: Plan }) {
+import { getProgressKey } from "@/lib/planStorage";
+
+type PlanViewerProps = {
+  plan: Plan;
+  progress?: Record<string, boolean>;
+  onToggleComplete?: (weekId: number, dayId: number) => void;
+};
+
+export default function PlanViewer({ plan, progress = {}, onToggleComplete }: PlanViewerProps) {
   const [view, setView] = useState<ViewType>("weekly");
   const [currentWeek, setCurrentWeek] = useState(0);
   const [currentDay, setCurrentDay] = useState(0);
@@ -216,15 +224,39 @@ export default function PlanViewer({ plan }: { plan: Plan }) {
       )}
 
       {/* View Content */}
-      {view === "full" && <FullView ref={fullViewRef} plan={plan} onDayClick={(day, weekId) => setModalDay({ day, weekId })} />}
-      {view === "weekly" && <WeeklyView week={plan.weeks[currentWeek]} onDayClick={(day) => setModalDay({ day, weekId: plan.weeks[currentWeek].id })} />}
-      {view === "daily" && <DailyView day={allDays[currentDay]} weekId={allDays[currentDay].weekId} />}
+      {view === "full" && (
+        <FullView
+          ref={fullViewRef}
+          plan={plan}
+          progress={progress}
+          onDayClick={(day, weekId) => setModalDay({ day, weekId })}
+          onToggleComplete={onToggleComplete}
+        />
+      )}
+      {view === "weekly" && (
+        <WeeklyView
+          week={plan.weeks[currentWeek]}
+          progress={progress}
+          onDayClick={(day) => setModalDay({ day, weekId: plan.weeks[currentWeek].id })}
+          onToggleComplete={onToggleComplete}
+        />
+      )}
+      {view === "daily" && (
+        <DailyView
+          day={allDays[currentDay]}
+          weekId={allDays[currentDay].weekId}
+          isComplete={progress[getProgressKey(allDays[currentDay].weekId, allDays[currentDay].id)] ?? false}
+          onToggleComplete={onToggleComplete ? () => onToggleComplete(allDays[currentDay].weekId, allDays[currentDay].id) : undefined}
+        />
+      )}
 
       {/* Modal */}
       {modalDay && (
         <DayModal
           day={modalDay.day}
           weekId={modalDay.weekId}
+          isComplete={progress[getProgressKey(modalDay.weekId, modalDay.day.id)] ?? false}
+          onToggleComplete={onToggleComplete ? () => onToggleComplete(modalDay.weekId, modalDay.day.id) : undefined}
           onClose={() => setModalDay(null)}
         />
       )}
@@ -236,8 +268,15 @@ type FullViewHandle = {
   scrollToDay: (dayIndex: number) => void;
 };
 
-const FullView = forwardRef<FullViewHandle, { plan: Plan; onDayClick: (day: DayType, weekId: number) => void }>(
-  function FullView({ plan, onDayClick }, ref) {
+type FullViewProps = {
+  plan: Plan;
+  progress: Record<string, boolean>;
+  onDayClick: (day: DayType, weekId: number) => void;
+  onToggleComplete?: (weekId: number, dayId: number) => void;
+};
+
+const FullView = forwardRef<FullViewHandle, FullViewProps>(
+  function FullView({ plan, progress, onDayClick, onToggleComplete }, ref) {
     const dayRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     let dayCounter = 0;
 
@@ -265,16 +304,33 @@ const FullView = forwardRef<FullViewHandle, { plan: Plan; onDayClick: (day: DayT
             <div className="space-y-2">
               {week.days.map((day) => {
                 const currentDayIndex = dayCounter++;
+                const isComplete = progress[getProgressKey(week.id, day.id)] ?? false;
                 return (
                   <div
                     key={day.id}
                     ref={(el) => {
                       if (el) dayRefs.current.set(currentDayIndex, el);
                     }}
-                    className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
+                    className={`flex items-center gap-4 p-3 rounded-lg ${
+                      isComplete ? "bg-green-50" : "bg-gray-50"
+                    }`}
                   >
-                    <span className="font-medium w-24">{day.day}</span>
-                    <span className="text-gray-600">{day.distance}km</span>
+                    <button
+                      onClick={() => onToggleComplete?.(week.id, day.id)}
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                        isComplete
+                          ? "bg-green-500 border-green-500 text-white"
+                          : "border-gray-300 hover:border-gray-400"
+                      }`}
+                    >
+                      {isComplete && (
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                    <span className={`font-medium w-24 ${isComplete ? "text-green-700" : ""}`}>{day.day}</span>
+                    <span className={isComplete ? "text-green-600" : "text-gray-600"}>{day.distance}km</span>
                     <span className="text-sm text-gray-500">
                       {day["number-of-intervals"]} intervals
                     </span>
@@ -298,7 +354,14 @@ const FullView = forwardRef<FullViewHandle, { plan: Plan; onDayClick: (day: DayT
   }
 );
 
-function WeeklyView({ week, onDayClick }: { week: WeekType; onDayClick: (day: DayType) => void }) {
+type WeeklyViewProps = {
+  week: WeekType;
+  progress: Record<string, boolean>;
+  onDayClick: (day: DayType) => void;
+  onToggleComplete?: (weekId: number, dayId: number) => void;
+};
+
+function WeeklyView({ week, progress, onDayClick, onToggleComplete }: WeeklyViewProps) {
   // Create a map of day name to day data
   const dayMap = new Map<string, DayType>();
   week.days.forEach((day) => {
@@ -311,6 +374,7 @@ function WeeklyView({ week, onDayClick }: { week: WeekType; onDayClick: (day: Da
         {DAYS_OF_WEEK.map((dayName) => {
           const dayData = dayMap.get(dayName);
           const isTrainingDay = !!dayData;
+          const isComplete = dayData ? (progress[getProgressKey(week.id, dayData.id)] ?? false) : false;
 
           return (
             <div
@@ -318,21 +382,44 @@ function WeeklyView({ week, onDayClick }: { week: WeekType; onDayClick: (day: Da
               onClick={() => isTrainingDay && dayData && onDayClick(dayData)}
               className={`p-3 rounded-lg min-h-[200px] ${
                 isTrainingDay
-                  ? "bg-white border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
+                  ? isComplete
+                    ? "bg-green-50 border-2 border-green-300 cursor-pointer hover:border-green-400 transition-colors"
+                    : "bg-white border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
                   : "bg-gray-100 text-gray-400"
               }`}
             >
-              <h4
-                className={`font-medium text-sm mb-2 ${
-                  isTrainingDay ? "text-black" : "text-gray-400"
-                }`}
-              >
-                {dayName.slice(0, 3)}
-              </h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4
+                  className={`font-medium text-sm ${
+                    isTrainingDay ? (isComplete ? "text-green-700" : "text-black") : "text-gray-400"
+                  }`}
+                >
+                  {dayName.slice(0, 3)}
+                </h4>
+                {isTrainingDay && dayData && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleComplete?.(week.id, dayData.id);
+                    }}
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                      isComplete
+                        ? "bg-green-500 border-green-500 text-white"
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {isComplete && (
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
 
               {isTrainingDay && dayData ? (
                 <div className="space-y-2">
-                  <div className="text-2xl font-bold">{dayData.distance}km</div>
+                  <div className={`text-2xl font-bold ${isComplete ? "text-green-700" : ""}`}>{dayData.distance}km</div>
                   <div className="text-xs text-gray-600 space-y-1">
                     <div>{dayData["number-of-intervals"]} intervals</div>
                     <div>Jog: {dayData["jogging-interval-time"]}min</div>
@@ -360,23 +447,57 @@ function WeeklyView({ week, onDayClick }: { week: WeekType; onDayClick: (day: Da
   );
 }
 
-function DailyView({ day, weekId }: { day: DayType; weekId: number }) {
+type DailyViewProps = {
+  day: DayType;
+  weekId: number;
+  isComplete: boolean;
+  onToggleComplete?: () => void;
+};
+
+function DailyView({ day, weekId, isComplete, onToggleComplete }: DailyViewProps) {
   return (
     <div className="max-w-md mx-auto">
-      <DayCard day={day} weekId={weekId} />
+      <DayCard day={day} weekId={weekId} isComplete={isComplete} onToggleComplete={onToggleComplete} />
     </div>
   );
 }
 
-function DayCard({ day, weekId }: { day: DayType; weekId: number }) {
-  return (
-    <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-      <div className="text-sm text-gray-500 mb-1">Week {weekId}</div>
-      <h3 className="text-2xl font-bold mb-4">{day.day}</h3>
+type DayCardProps = {
+  day: DayType;
+  weekId: number;
+  isComplete: boolean;
+  onToggleComplete?: () => void;
+};
 
-      <div className="text-5xl font-bold text-center py-6 border-y border-gray-100">
-        {day.distance}
-        <span className="text-2xl text-gray-500 ml-1">km</span>
+function DayCard({ day, weekId, isComplete, onToggleComplete }: DayCardProps) {
+  return (
+    <div className={`rounded-xl p-6 shadow-sm border-2 ${
+      isComplete ? "bg-green-50 border-green-300" : "bg-white border-gray-200"
+    }`}>
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <div className="text-sm text-gray-500 mb-1">Week {weekId}</div>
+          <h3 className={`text-2xl font-bold ${isComplete ? "text-green-700" : ""}`}>{day.day}</h3>
+        </div>
+        {onToggleComplete && (
+          <button
+            onClick={onToggleComplete}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+              isComplete
+                ? "bg-green-500 text-white hover:bg-green-600"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {isComplete ? "Completed" : "Mark Complete"}
+          </button>
+        )}
+      </div>
+
+      <div className={`text-5xl font-bold text-center py-6 border-y ${
+        isComplete ? "border-green-200" : "border-gray-100"
+      }`}>
+        <span className={isComplete ? "text-green-700" : ""}>{day.distance}</span>
+        <span className={`text-2xl ml-1 ${isComplete ? "text-green-500" : "text-gray-500"}`}>km</span>
       </div>
 
       <div className="grid grid-cols-3 gap-4 py-6 text-center">
@@ -411,7 +532,15 @@ function DayCard({ day, weekId }: { day: DayType; weekId: number }) {
   );
 }
 
-function DayModal({ day, weekId, onClose }: { day: DayType; weekId: number; onClose: () => void }) {
+type DayModalProps = {
+  day: DayType;
+  weekId: number;
+  isComplete: boolean;
+  onToggleComplete?: () => void;
+  onClose: () => void;
+};
+
+function DayModal({ day, weekId, isComplete, onToggleComplete, onClose }: DayModalProps) {
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -430,7 +559,7 @@ function DayModal({ day, weekId, onClose }: { day: DayType; weekId: number; onCl
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <DayCard day={day} weekId={weekId} />
+          <DayCard day={day} weekId={weekId} isComplete={isComplete} onToggleComplete={onToggleComplete} />
         </div>
       </div>
     </div>
