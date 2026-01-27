@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Plan, WeekType, DayType } from "@/types/week";
 
 type ViewType = "full" | "weekly" | "daily";
+
+type SelectedDay = {
+  day: DayType;
+  weekId: number;
+} | null;
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -13,6 +18,11 @@ export default function PlanViewer({ plan }: { plan: Plan }) {
   const [currentDay, setCurrentDay] = useState(0);
   const [showWeekMenu, setShowWeekMenu] = useState(false);
   const [showDayMenu, setShowDayMenu] = useState(false);
+  const [modalDay, setModalDay] = useState<SelectedDay>(null);
+  const [rememberedDay, setRememberedDay] = useState<{ dayIndex: number; weekIndex: number } | null>(null);
+  const dayMenuRef = useRef<HTMLDivElement>(null);
+  const currentDayButtonRef = useRef<HTMLButtonElement>(null);
+  const fullViewRef = useRef<{ scrollToDay: (dayIndex: number) => void }>(null);
 
   const totalWeeks = plan.weeks.length;
   const allDays = plan.weeks.flatMap((week, weekIndex) =>
@@ -20,13 +30,60 @@ export default function PlanViewer({ plan }: { plan: Plan }) {
   );
   const totalDays = allDays.length;
 
+  // Scroll day dropdown to current day when opened
+  useEffect(() => {
+    if (showDayMenu && currentDayButtonRef.current && dayMenuRef.current) {
+      const button = currentDayButtonRef.current;
+      const menu = dayMenuRef.current;
+      const buttonTop = button.offsetTop;
+      const menuHeight = menu.clientHeight;
+      const buttonHeight = button.clientHeight;
+      menu.scrollTop = buttonTop - menuHeight / 2 + buttonHeight / 2;
+    }
+  }, [showDayMenu]);
+
+  // Handle view switching with synchronization
+  const handleViewChange = (newView: ViewType) => {
+    if (newView === view) return;
+
+    if (view === "daily" && newView === "weekly") {
+      // Daily → Weekly: remember current day and show its week
+      setRememberedDay({ dayIndex: currentDay, weekIndex: allDays[currentDay].weekIndex });
+      setCurrentWeek(allDays[currentDay].weekIndex);
+    } else if (view === "daily" && newView === "full") {
+      // Daily → Full: remember current day and scroll to it
+      setRememberedDay({ dayIndex: currentDay, weekIndex: allDays[currentDay].weekIndex });
+      setTimeout(() => {
+        fullViewRef.current?.scrollToDay(currentDay);
+      }, 0);
+    } else if (view === "weekly" && newView === "daily") {
+      // Weekly → Daily: return to remembered day if still on same week, otherwise first day of week
+      if (rememberedDay && rememberedDay.weekIndex === currentWeek) {
+        setCurrentDay(rememberedDay.dayIndex);
+      } else {
+        const firstDayOfWeek = allDays.findIndex(d => d.weekIndex === currentWeek);
+        if (firstDayOfWeek !== -1) {
+          setCurrentDay(firstDayOfWeek);
+        }
+      }
+    } else if (view === "weekly" && newView === "full") {
+      // Weekly → Full: scroll to first day of current week
+      const firstDayOfWeek = allDays.findIndex(d => d.weekIndex === currentWeek);
+      setTimeout(() => {
+        fullViewRef.current?.scrollToDay(firstDayOfWeek !== -1 ? firstDayOfWeek : 0);
+      }, 0);
+    }
+
+    setView(newView);
+  };
+
   return (
     <div>
       {/* View Tabs */}
       <div className="flex justify-center mb-6">
         <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50">
           <button
-            onClick={() => setView("full")}
+            onClick={() => handleViewChange("full")}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               view === "full"
                 ? "bg-white text-black shadow-sm"
@@ -36,7 +93,7 @@ export default function PlanViewer({ plan }: { plan: Plan }) {
             Full
           </button>
           <button
-            onClick={() => setView("weekly")}
+            onClick={() => handleViewChange("weekly")}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               view === "weekly"
                 ? "bg-white text-black shadow-sm"
@@ -46,7 +103,7 @@ export default function PlanViewer({ plan }: { plan: Plan }) {
             Weekly
           </button>
           <button
-            onClick={() => setView("daily")}
+            onClick={() => handleViewChange("daily")}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               view === "daily"
                 ? "bg-white text-black shadow-sm"
@@ -117,10 +174,14 @@ export default function PlanViewer({ plan }: { plan: Plan }) {
 
             {/* Day dropdown menu */}
             {showDayMenu && view === "daily" && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white border rounded-lg shadow-lg py-1 z-10 max-h-48 overflow-y-auto">
+              <div
+                ref={dayMenuRef}
+                className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white border rounded-lg shadow-lg py-1 z-10 max-h-48 overflow-y-auto"
+              >
                 {allDays.map((day, index) => (
                   <button
                     key={index}
+                    ref={index === currentDay ? currentDayButtonRef : null}
                     onClick={() => {
                       setCurrentDay(index);
                       setShowDayMenu(false);
@@ -155,50 +216,89 @@ export default function PlanViewer({ plan }: { plan: Plan }) {
       )}
 
       {/* View Content */}
-      {view === "full" && <FullView plan={plan} />}
-      {view === "weekly" && <WeeklyView week={plan.weeks[currentWeek]} />}
+      {view === "full" && <FullView ref={fullViewRef} plan={plan} onDayClick={(day, weekId) => setModalDay({ day, weekId })} />}
+      {view === "weekly" && <WeeklyView week={plan.weeks[currentWeek]} onDayClick={(day) => setModalDay({ day, weekId: plan.weeks[currentWeek].id })} />}
       {view === "daily" && <DailyView day={allDays[currentDay]} weekId={allDays[currentDay].weekId} />}
+
+      {/* Modal */}
+      {modalDay && (
+        <DayModal
+          day={modalDay.day}
+          weekId={modalDay.weekId}
+          onClose={() => setModalDay(null)}
+        />
+      )}
     </div>
   );
 }
 
-function FullView({ plan }: { plan: Plan }) {
-  return (
-    <div className="relative">
-      {/* Timeline line */}
-      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+type FullViewHandle = {
+  scrollToDay: (dayIndex: number) => void;
+};
 
-      {plan.weeks.map((week) => (
-        <div key={week.id} className="relative pl-10 pb-8">
-          {/* Timeline dot */}
-          <div className="absolute left-2.5 top-1 w-3 h-3 rounded-full bg-black" />
+const FullView = forwardRef<FullViewHandle, { plan: Plan; onDayClick: (day: DayType, weekId: number) => void }>(
+  function FullView({ plan, onDayClick }, ref) {
+    const dayRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+    let dayCounter = 0;
 
-          <h3 className="font-semibold text-lg mb-3">Week {week.id}</h3>
+    useImperativeHandle(ref, () => ({
+      scrollToDay: (dayIndex: number) => {
+        const element = dayRefs.current.get(dayIndex);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      },
+    }));
 
-          <div className="space-y-2">
-            {week.days.map((day) => (
-              <div
-                key={day.id}
-                className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
-              >
-                <span className="font-medium w-24">{day.day}</span>
-                <span className="text-gray-600">{day.distance}km</span>
-                <span className="text-sm text-gray-500">
-                  {day["number-of-intervals"]} intervals
-                </span>
-                <span className="text-sm text-gray-500">
-                  ({day["jogging-interval-time"]}min jog / {day["walking-intervals-time"]}min walk)
-                </span>
-              </div>
-            ))}
+    return (
+      <div className="relative">
+        {/* Timeline line */}
+        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+
+        {plan.weeks.map((week) => (
+          <div key={week.id} className="relative pl-10 pb-8">
+            {/* Timeline dot */}
+            <div className="absolute left-2.5 top-1 w-3 h-3 rounded-full bg-black" />
+
+            <h3 className="font-semibold text-lg mb-3">Week {week.id}</h3>
+
+            <div className="space-y-2">
+              {week.days.map((day) => {
+                const currentDayIndex = dayCounter++;
+                return (
+                  <div
+                    key={day.id}
+                    ref={(el) => {
+                      if (el) dayRefs.current.set(currentDayIndex, el);
+                    }}
+                    className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
+                  >
+                    <span className="font-medium w-24">{day.day}</span>
+                    <span className="text-gray-600">{day.distance}km</span>
+                    <span className="text-sm text-gray-500">
+                      {day["number-of-intervals"]} intervals
+                    </span>
+                    <span className="text-sm text-gray-500 flex-1">
+                      ({day["jogging-interval-time"]}min jog / {day["walking-intervals-time"]}min walk)
+                    </span>
+                    <button
+                      onClick={() => onDayClick(day, week.id)}
+                      className="text-sm text-gray-500 hover:text-black hover:underline"
+                    >
+                      View more
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+        ))}
+      </div>
+    );
+  }
+);
 
-function WeeklyView({ week }: { week: WeekType }) {
+function WeeklyView({ week, onDayClick }: { week: WeekType; onDayClick: (day: DayType) => void }) {
   // Create a map of day name to day data
   const dayMap = new Map<string, DayType>();
   week.days.forEach((day) => {
@@ -215,9 +315,10 @@ function WeeklyView({ week }: { week: WeekType }) {
           return (
             <div
               key={dayName}
+              onClick={() => isTrainingDay && dayData && onDayClick(dayData)}
               className={`p-3 rounded-lg min-h-[200px] ${
                 isTrainingDay
-                  ? "bg-white border-2 border-gray-200"
+                  ? "bg-white border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors"
                   : "bg-gray-100 text-gray-400"
               }`}
             >
@@ -262,43 +363,75 @@ function WeeklyView({ week }: { week: WeekType }) {
 function DailyView({ day, weekId }: { day: DayType; weekId: number }) {
   return (
     <div className="max-w-md mx-auto">
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-        <div className="text-sm text-gray-500 mb-1">Week {weekId}</div>
-        <h3 className="text-2xl font-bold mb-4">{day.day}</h3>
+      <DayCard day={day} weekId={weekId} />
+    </div>
+  );
+}
 
-        <div className="text-5xl font-bold text-center py-6 border-y border-gray-100">
-          {day.distance}
-          <span className="text-2xl text-gray-500 ml-1">km</span>
+function DayCard({ day, weekId }: { day: DayType; weekId: number }) {
+  return (
+    <div className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
+      <div className="text-sm text-gray-500 mb-1">Week {weekId}</div>
+      <h3 className="text-2xl font-bold mb-4">{day.day}</h3>
+
+      <div className="text-5xl font-bold text-center py-6 border-y border-gray-100">
+        {day.distance}
+        <span className="text-2xl text-gray-500 ml-1">km</span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 py-6 text-center">
+        <div>
+          <div className="text-2xl font-semibold">{day["number-of-intervals"]}</div>
+          <div className="text-sm text-gray-500">intervals</div>
         </div>
-
-        <div className="grid grid-cols-3 gap-4 py-6 text-center">
-          <div>
-            <div className="text-2xl font-semibold">{day["number-of-intervals"]}</div>
-            <div className="text-sm text-gray-500">intervals</div>
-          </div>
-          <div>
-            <div className="text-2xl font-semibold">{day["jogging-interval-time"]}</div>
-            <div className="text-sm text-gray-500">min jog</div>
-          </div>
-          <div>
-            <div className="text-2xl font-semibold">{day["walking-intervals-time"]}</div>
-            <div className="text-sm text-gray-500">min walk</div>
-          </div>
+        <div>
+          <div className="text-2xl font-semibold">{day["jogging-interval-time"]}</div>
+          <div className="text-sm text-gray-500">min jog</div>
         </div>
+        <div>
+          <div className="text-2xl font-semibold">{day["walking-intervals-time"]}</div>
+          <div className="text-sm text-gray-500">min walk</div>
+        </div>
+      </div>
 
-        {day.instructions.length > 0 && (
-          <div className="pt-4 border-t border-gray-100">
-            <h4 className="font-medium mb-2">Instructions</h4>
-            <ul className="space-y-2">
-              {day.instructions.map((instruction, index) => (
-                <li key={index} className="flex gap-2 text-sm text-gray-600">
-                  <span className="text-gray-400">{index + 1}.</span>
-                  {instruction}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {day.instructions.length > 0 && (
+        <div className="pt-4 border-t border-gray-100">
+          <h4 className="font-medium mb-2">Instructions</h4>
+          <ul className="space-y-2">
+            {day.instructions.map((instruction, index) => (
+              <li key={index} className="flex gap-2 text-sm text-gray-600">
+                <span className="text-gray-400">{index + 1}.</span>
+                {instruction}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DayModal({ day, weekId, onClose }: { day: DayType; weekId: number; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-w-md w-full max-h-[90vh] overflow-y-auto overflow-x-hidden p-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative">
+          <button
+            onClick={onClose}
+            className="absolute -top-1 -right-1 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 z-10"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <DayCard day={day} weekId={weekId} />
+        </div>
       </div>
     </div>
   );
