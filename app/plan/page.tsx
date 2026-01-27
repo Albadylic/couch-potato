@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import generatePlan from "@/lib/agent";
 import { Plan } from "@/types/week";
-import Week from "../components/Week";
+import PlanViewer from "../components/PlanViewer";
 
 type Props = {
   searchParams: {
@@ -35,13 +35,7 @@ async function PlanContent({
     return <p>Failed to generate plan.</p>;
   }
 
-  return (
-    <div>
-      {plan.weeks.map((week) => (
-        <Week key={week.id} week={week} />
-      ))}
-    </div>
-  );
+  return <PlanViewer plan={plan} />;
 }
 
 export default async function PlanPage({ searchParams }: Props) {
@@ -54,10 +48,10 @@ export default async function PlanPage({ searchParams }: Props) {
   const injuries = params.injuries ? decodeURIComponent(params.injuries) : undefined;
 
   return (
-    <main className="max-w-xl mx-auto py-12">
-      <h1 className="text-2xl font-bold mb-4">Your Plan</h1>
+    <main className="max-w-5xl mx-auto py-12 px-4">
+      <h1 className="text-2xl font-bold mb-6 text-center">Your Plan</h1>
 
-      <Suspense fallback={<p>Generating plan...</p>}>
+      <Suspense fallback={<p className="text-center">Generating plan...</p>}>
         <PlanContent
           ability={ability}
           weeks={weeks}
