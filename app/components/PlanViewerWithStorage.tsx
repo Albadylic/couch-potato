@@ -3,7 +3,15 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Plan } from "@/types/week";
-import { SavedPlanGoal, savePlan, getPlanById, updatePlanProgress, getProgressKey } from "@/lib/planStorage";
+import {
+  SavedPlanGoal,
+  savePlan,
+  getPlanById,
+  updatePlanProgress,
+  getProgressKey,
+  ProgressValue,
+  RunFeedback
+} from "@/lib/planStorage";
 import PlanViewer from "./PlanViewer";
 
 type Props = {
@@ -15,7 +23,7 @@ type Props = {
 export default function PlanViewerWithStorage({ plan, goal, existingPlanId }: Props) {
   const router = useRouter();
   const [planId, setPlanId] = useState<string | null>(existingPlanId ?? null);
-  const [progress, setProgress] = useState<Record<string, boolean>>({});
+  const [progress, setProgress] = useState<Record<string, ProgressValue>>({});
   const [isLoading, setIsLoading] = useState(!existingPlanId);
   const hasSaved = useRef(false);
 
@@ -36,15 +44,13 @@ export default function PlanViewerWithStorage({ plan, goal, existingPlanId }: Pr
     }
   }, [existingPlanId, goal, plan, router]);
 
-  const handleToggleComplete = (weekId: number, dayId: number) => {
+  const handleUpdateFeedback = (weekId: number, dayId: number, feedback: RunFeedback) => {
     const id = planId ?? existingPlanId;
     if (!id) return;
 
     const key = getProgressKey(weekId, dayId);
-    const newValue = !progress[key];
-
-    setProgress((prev) => ({ ...prev, [key]: newValue }));
-    updatePlanProgress(id, weekId, dayId, newValue);
+    setProgress((prev) => ({ ...prev, [key]: feedback }));
+    updatePlanProgress(id, weekId, dayId, feedback);
   };
 
   if (isLoading) {
@@ -55,7 +61,7 @@ export default function PlanViewerWithStorage({ plan, goal, existingPlanId }: Pr
     <PlanViewer
       plan={plan}
       progress={progress}
-      onToggleComplete={handleToggleComplete}
+      onUpdateFeedback={handleUpdateFeedback}
     />
   );
 }

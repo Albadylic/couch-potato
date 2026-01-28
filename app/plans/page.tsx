@@ -53,7 +53,7 @@ export default function PlansPage() {
       ) : (
         <div className="space-y-4">
           {plans.map((plan) => {
-            const { completed, total } = getPlanProgress(plan);
+            const { completed, missed, total } = getPlanProgress(plan);
             const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
             const createdDate = new Date(plan.createdAt).toLocaleDateString();
 
@@ -94,7 +94,10 @@ export default function PlansPage() {
                     />
                   </div>
                   <span className="text-sm text-gray-600 whitespace-nowrap">
-                    {completed}/{total} days ({percentage}%)
+                    {completed}/{total} ({percentage}%)
+                    {missed > 0 && (
+                      <span className="text-orange-500 ml-2">• {missed} missed</span>
+                    )}
                   </span>
                 </div>
               </Link>
