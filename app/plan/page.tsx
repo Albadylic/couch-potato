@@ -3,6 +3,7 @@ import generatePlan from "@/lib/agent";
 import { Plan } from "@/types/week";
 import PlanViewerWithStorage from "../components/PlanViewerWithStorage";
 import { SavedPlanGoal } from "@/lib/planStorage";
+import LoadingPotato from "../components/LoadingPotato";
 
 type Props = {
   searchParams: {
@@ -33,7 +34,12 @@ async function PlanContent({
   const plan: Plan | undefined = await generatePlan(ability, weeks, frequency, distance, unavailableDays, injuries);
 
   if (!plan) {
-    return <p>Failed to generate plan.</p>;
+    return (
+      <div className="text-center py-12">
+        <p className="text-stone-dark mb-4">Oops! Failed to generate your plan.</p>
+        <p className="text-stone">Please try again or adjust your goals.</p>
+      </div>
+    );
   }
 
   const goal: SavedPlanGoal = {
@@ -59,9 +65,11 @@ export default async function PlanPage({ searchParams }: Props) {
 
   return (
     <main className="max-w-5xl mx-auto py-12 px-4">
-      <h1 className="text-2xl font-bold mb-6 text-center">Your Plan</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center text-stone-dark">Your Training Plan</h1>
 
-      <Suspense fallback={<p className="text-center">Generating plan...</p>}>
+      <Suspense fallback={
+        <LoadingPotato message="Coach Spud is crafting your perfect plan..." />
+      }>
         <PlanContent
           ability={ability}
           weeks={weeks}

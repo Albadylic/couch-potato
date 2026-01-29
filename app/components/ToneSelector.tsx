@@ -20,18 +20,18 @@ export function ToneSelector({
   disabled = false,
 }: ToneSelectorProps) {
   return (
-    <div className="flex gap-2">
-      <span className="text-sm text-gray-600 self-center">Tone:</span>
+    <div className="flex gap-2 items-center">
+      <span className="text-sm text-stone">Tone:</span>
       {toneOptions.map(({ value, label }) => (
         <button
           key={value}
           type="button"
           onClick={() => onToneChange(value)}
           disabled={disabled}
-          className={`px-3 py-1 text-sm rounded transition-colors ${
+          className={`px-3 py-1 text-sm rounded-full transition-colors ${
             selectedTone === value
-              ? "bg-black text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              ? "bg-stone-dark text-white"
+              : "bg-cream-dark text-stone-dark hover:bg-stone-light border border-stone-light"
           } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           {label}

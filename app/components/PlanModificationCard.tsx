@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PlanModificationProposal } from "@/types/coach";
 import { DayType } from "@/types/week";
+import { PotatoFlexing } from "./PotatoMascot";
 
 type Props = {
   modification: PlanModificationProposal;
@@ -35,35 +36,21 @@ export default function PlanModificationCard({
   const isPending = modification.status === "pending";
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 my-3">
+    <div className="bg-potato-body/30 border-2 border-potato-body rounded-xl p-4 my-3 ml-8">
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-          <svg
-            className="w-5 h-5 text-blue-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-            />
-          </svg>
-        </div>
+        <PotatoFlexing size={40} className="flex-shrink-0" />
         <div className="flex-1">
-          <h4 className="font-medium text-blue-900">Plan Modification</h4>
-          <p className="text-sm text-blue-700 mt-1">{modification.description}</p>
+          <h4 className="font-medium text-stone-dark">Plan Update</h4>
+          <p className="text-sm text-stone mt-1">{modification.description}</p>
 
           {modification.changes.length > 0 && (
             <ul className="mt-2 space-y-1">
               {modification.changes.map((change, index) => (
                 <li
                   key={index}
-                  className="text-sm text-blue-600 flex items-center gap-2"
+                  className="text-sm text-stone-dark flex items-center gap-2"
                 >
-                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                  <span className="w-1.5 h-1.5 bg-sage rounded-full" />
                   {change.description}
                 </li>
               ))}
@@ -73,7 +60,7 @@ export default function PlanModificationCard({
           {modification.proposedWeeks.length > 0 && (
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="text-sm text-blue-600 hover:text-blue-800 mt-2 flex items-center gap-1"
+              className="text-sm text-stone-dark hover:text-stone mt-2 flex items-center gap-1"
             >
               <svg
                 className={`w-4 h-4 transition-transform ${
@@ -95,21 +82,21 @@ export default function PlanModificationCard({
           )}
 
           {showPreview && (
-            <div className="mt-3 bg-white rounded border border-blue-200 p-3 max-h-60 overflow-y-auto">
+            <div className="mt-3 bg-white rounded-xl border border-stone-light p-3 max-h-60 overflow-y-auto">
               {modification.proposedWeeks.map((week) => (
                 <div key={week.id} className="mb-3 last:mb-0">
-                  <h5 className="font-medium text-sm text-gray-900">
+                  <h5 className="font-medium text-sm text-stone-dark">
                     Week {week.id}
                   </h5>
                   <div className="mt-1 space-y-1">
                     {week.days.map((day) => (
                       <div
                         key={day.id}
-                        className="text-xs text-gray-600 flex items-center gap-2"
+                        className="text-xs text-stone flex items-center gap-2"
                       >
-                        <span className="font-medium w-20">{day.day}</span>
+                        <span className="font-medium w-20 text-stone-dark">{day.day}</span>
                         <span>{day.distance}km</span>
-                        <span className="text-gray-400">|</span>
+                        <span className="text-stone-light">|</span>
                         <span>{formatIntervals(day)}</span>
                       </div>
                     ))}
@@ -123,13 +110,13 @@ export default function PlanModificationCard({
             <div className="flex gap-2 mt-3">
               <button
                 onClick={onAccept}
-                className="flex-1 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex-1 py-2 px-4 bg-sage-dark hover:bg-sage text-white text-sm font-medium rounded-full transition-colors"
               >
                 Apply Changes
               </button>
               <button
                 onClick={onReject}
-                className="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                className="flex-1 py-2 px-4 bg-cream-dark hover:bg-stone-light text-stone-dark text-sm font-medium rounded-full border border-stone-light transition-colors"
               >
                 Reject
               </button>
@@ -137,7 +124,7 @@ export default function PlanModificationCard({
           )}
 
           {modification.status === "accepted" && (
-            <div className="mt-3 py-2 px-3 bg-green-100 text-green-700 text-sm rounded-lg flex items-center gap-2">
+            <div className="mt-3 py-2 px-3 bg-success-light text-sage-dark text-sm rounded-full flex items-center gap-2">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -150,7 +137,7 @@ export default function PlanModificationCard({
           )}
 
           {modification.status === "rejected" && (
-            <div className="mt-3 py-2 px-3 bg-gray-100 text-gray-600 text-sm rounded-lg flex items-center gap-2">
+            <div className="mt-3 py-2 px-3 bg-cream-dark text-stone text-sm rounded-full flex items-center gap-2">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"

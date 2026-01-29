@@ -20,6 +20,7 @@ import {
 } from "@/lib/coachStorage";
 import { sendCoachMessage, requestWeeklyEvaluation } from "@/app/actions/coach";
 import PlanModificationCard from "./PlanModificationCard";
+import { PotatoMascot, PotatoFlexing } from "./PotatoMascot";
 
 type Props = {
   planId: string;
@@ -114,7 +115,7 @@ export default function CoachChat({
       const errorMessage = saveCoachMessage(planId, {
         role: "coach",
         content:
-          "Hi! I'm your running coach. How can I help you with your training today?",
+          "Hey there, future hot chip! I'm Coach Spud, your friendly potato trainer. How can I help you crush your running goals today?",
       });
       setMessages([errorMessage]);
     } finally {
@@ -141,7 +142,7 @@ export default function CoachChat({
       console.error("Failed to get week evaluation:", error);
       const errorMessage = saveCoachMessage(planId, {
         role: "coach",
-        content: `Great job completing week ${weekId}! How are you feeling about your progress?`,
+        content: `Amazing work completing week ${weekId}! You're getting closer to becoming a hot chip! How are you feeling about your progress?`,
       });
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -197,8 +198,8 @@ export default function CoachChat({
          error.message.includes("[COACH_SCHEMA_ERROR]"));
 
       const errorContent = isSchemaError
-        ? "I had trouble generating a valid plan modification. Could you please try your request again? If the problem persists, try being more specific about what changes you'd like."
-        : "Sorry, I had trouble responding. Please try again.";
+        ? "Oops! I had trouble generating that plan modification. Could you try asking again? Maybe be a bit more specific about what changes you'd like!"
+        : "Sorry, I had a little stumble there. Could you try again?";
 
       const errorMessage = saveCoachMessage(planId, {
         role: "coach",
@@ -250,41 +251,27 @@ export default function CoachChat({
     <div className="fixed inset-0 z-50 flex items-end justify-end p-4 sm:p-6">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/30"
+        className="absolute inset-0 bg-stone-dark/30"
         onClick={onClose}
       />
 
       {/* Chat Panel */}
-      <div className="relative w-full max-w-md h-[600px] max-h-[80vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-md h-[600px] max-h-[80vh] bg-cream rounded-2xl shadow-2xl flex flex-col overflow-hidden border-2 border-stone-light">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-blue-500 text-white">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-stone-light bg-potato-body">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center">
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </div>
+            <PotatoFlexing size={48} />
             <div>
-              <h2 className="font-semibold">Running Coach</h2>
-              <p className="text-xs text-blue-100">Here to help you succeed</p>
+              <h2 className="font-semibold text-stone-dark">Coach Spud</h2>
+              <p className="text-xs text-stone">Your potato trainer</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-blue-400 rounded-full transition-colors"
+            className="p-2 hover:bg-stone-light rounded-full transition-colors"
           >
             <svg
-              className="w-5 h-5"
+              className="w-5 h-5 text-stone-dark"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -300,19 +287,22 @@ export default function CoachChat({
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-cream">
           {messages.map((msg) => (
             <div key={msg.id}>
               <div
-                className={`flex ${
+                className={`flex items-end gap-2 ${
                   msg.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
+                {msg.role === "coach" && (
+                  <PotatoMascot size={28} className="flex-shrink-0 mb-1" />
+                )}
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                     msg.role === "user"
-                      ? "bg-blue-500 text-white rounded-br-md"
-                      : "bg-gray-100 text-gray-900 rounded-bl-md"
+                      ? "bg-stone-dark text-white rounded-br-md"
+                      : "bg-white text-stone-dark rounded-bl-md border border-stone-light"
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -329,16 +319,17 @@ export default function CoachChat({
           ))}
 
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
+            <div className="flex items-end gap-2 justify-start">
+              <PotatoMascot size={28} className="flex-shrink-0 mb-1 animate-bounce" />
+              <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 border border-stone-light">
                 <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                  <span className="w-2 h-2 bg-stone rounded-full animate-bounce" />
                   <span
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    className="w-2 h-2 bg-stone rounded-full animate-bounce"
                     style={{ animationDelay: "0.1s" }}
                   />
                   <span
-                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    className="w-2 h-2 bg-stone rounded-full animate-bounce"
                     style={{ animationDelay: "0.2s" }}
                   />
                 </div>
@@ -350,22 +341,22 @@ export default function CoachChat({
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="p-4 border-t bg-gray-50">
+        <form onSubmit={handleSubmit} className="p-4 border-t border-stone-light bg-cream-dark">
           <div className="flex gap-2">
             <textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask your coach..."
+              placeholder="Ask Coach Spud..."
               rows={1}
-              className="flex-1 resize-none rounded-xl border border-gray-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 resize-none rounded-xl border-2 border-stone-light bg-white px-4 py-2 text-sm focus:outline-none focus:border-potato-body transition-colors"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="px-4 py-2 bg-blue-500 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-stone-dark text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-potato-outline transition-colors"
             >
               <svg
                 className="w-5 h-5"

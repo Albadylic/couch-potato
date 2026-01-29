@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAllPlans, deletePlan, getPlanProgress, SavedPlan } from "@/lib/planStorage";
+import { PotatoMascot, PotatoRunning } from "@/app/components/PotatoMascot";
+import LoadingPotato from "@/app/components/LoadingPotato";
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<SavedPlan[]>([]);
@@ -23,7 +25,7 @@ export default function PlansPage() {
   if (loading) {
     return (
       <main className="max-w-2xl mx-auto py-12 px-4">
-        <p className="text-center">Loading plans...</p>
+        <LoadingPotato message="Loading your plans..." />
       </main>
     );
   }
@@ -31,22 +33,26 @@ export default function PlansPage() {
   return (
     <main className="max-w-2xl mx-auto py-12 px-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">My Plans</h1>
+        <h1 className="text-2xl font-bold text-stone-dark">My Plans</h1>
         <Link
           href="/goal"
-          className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 text-sm"
+          className="btn-primary flex items-center gap-2"
         >
-          Create New Plan
+          <PotatoRunning size={20} />
+          New Plan
         </Link>
       </div>
 
       {plans.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">You don&apos;t have any saved plans yet.</p>
+          <PotatoMascot size={120} className="mx-auto mb-6" />
+          <p className="text-stone mb-4">You don&apos;t have any saved plans yet.</p>
+          <p className="text-stone-dark mb-6">Let&apos;s get you off the couch!</p>
           <Link
             href="/goal"
-            className="inline-block px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+            className="btn-primary inline-flex items-center gap-2"
           >
+            <PotatoRunning size={24} />
             Create Your First Plan
           </Link>
         </div>
@@ -61,24 +67,27 @@ export default function PlansPage() {
               <Link
                 key={plan.id}
                 href={`/plan/${plan.id}`}
-                className="block border rounded-lg p-4 hover:border-gray-400 transition-colors"
+                className="card block hover:border-stone transition-all"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <h2 className="font-semibold text-lg">
-                    {plan.goal.distance} in {plan.goal.weeks} weeks
-                  </h2>
+                  <div className="flex items-center gap-3">
+                    <PotatoRunning size={36} />
+                    <h2 className="font-semibold text-lg text-stone-dark">
+                      {plan.goal.distance} in {plan.goal.weeks} weeks
+                    </h2>
+                  </div>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       handleDelete(plan.id);
                     }}
-                    className="text-sm text-red-500 hover:text-red-700"
+                    className="text-sm text-error hover:text-stone-dark transition-colors"
                   >
                     Delete
                   </button>
                 </div>
 
-                <div className="text-sm text-gray-500 mb-3">
+                <div className="text-sm text-stone mb-3 ml-12">
                   <span className="capitalize">{plan.goal.ability}</span>
                   <span className="mx-2">•</span>
                   <span>{plan.goal.frequency} days/week</span>
@@ -86,17 +95,17 @@ export default function PlansPage() {
                   <span>Created {createdDate}</span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div className="flex items-center gap-3 ml-12">
+                  <div className="flex-1 bg-cream-dark rounded-full h-3 overflow-hidden">
                     <div
-                      className="bg-green-500 h-full transition-all"
+                      className="bg-sage h-full transition-all duration-500"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <span className="text-sm text-gray-600 whitespace-nowrap">
+                  <span className="text-sm text-stone whitespace-nowrap">
                     {completed}/{total} ({percentage}%)
                     {missed > 0 && (
-                      <span className="text-orange-500 ml-2">• {missed} missed</span>
+                      <span className="text-warning ml-2">• {missed} missed</span>
                     )}
                   </span>
                 </div>
