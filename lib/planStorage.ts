@@ -210,11 +210,30 @@ export function updatePlanWeeks(
 
   const existingWeeks = plans[planIndex].plan.weeks;
 
-  // Keep weeks before fromWeekId, replace with newWeeks from that point
-  const updatedWeeks = [
-    ...existingWeeks.filter((w) => w.id < fromWeekId),
-    ...newWeeks,
-  ];
+  // Create a map of new weeks by ID for easy lookup
+  const newWeeksMap = new Map(newWeeks.map((w) => [w.id, w]));
+
+  // Build updated weeks:
+  // 1. Keep weeks before fromWeekId unchanged
+  // 2. For weeks from fromWeekId onwards: use new version if provided, otherwise keep existing
+  const updatedWeeks = existingWeeks.map((existingWeek) => {
+    if (existingWeek.id < fromWeekId) {
+      // Keep weeks before fromWeekId unchanged
+      return existingWeek;
+    }
+    // For weeks from fromWeekId onwards, use new version if available
+    return newWeeksMap.get(existingWeek.id) ?? existingWeek;
+  });
+
+  // Also add any new weeks that didn't exist before (e.g., if plan was extended)
+  for (const newWeek of newWeeks) {
+    if (!existingWeeks.some((w) => w.id === newWeek.id)) {
+      updatedWeeks.push(newWeek);
+    }
+  }
+
+  // Sort by week ID to maintain order
+  updatedWeeks.sort((a, b) => a.id - b.id);
 
   plans[planIndex].plan.weeks = updatedWeeks;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));

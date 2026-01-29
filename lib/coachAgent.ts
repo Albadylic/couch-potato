@@ -2,7 +2,7 @@
 
 import { Agent, run } from "@openai/agents";
 import { z } from "zod";
-import { Plan } from "@/types/week";
+import { Plan, DayType } from "@/types/week";
 import {
   CoachContext,
   CoachAgentResponse,
@@ -26,11 +26,11 @@ const PlanChangeSchema = z.object({
 const DaySchema = z.object({
   id: z.number(),
   day: z.string(),
-  distance: z.number(),
-  "jogging-interval-time": z.number(),
-  "walking-intervals-time": z.number(),
-  "number-of-intervals": z.number(),
-  instructions: z.array(z.string()),
+  distance: z.number().min(0.1).describe("Distance in km - must be positive"),
+  "jogging-interval-time": z.number().min(1).describe("Duration of EACH jog interval in minutes (same for all intervals)"),
+  "walking-intervals-time": z.number().min(0).describe("Duration of EACH walk interval in minutes (same for all, or 0 for continuous)"),
+  "number-of-intervals": z.number().min(1).describe("How many times the jog/walk pattern repeats"),
+  instructions: z.array(z.string()).describe("Array of helpful instructions for this run"),
 });
 
 const WeekSchema = z.object({
@@ -79,8 +79,24 @@ const CoachResponseSchema = z.object({
     .describe("Insights extracted from the conversation"),
 });
 
+function formatIntervals(day: DayType): string {
+  const jog = day["jogging-interval-time"];
+  const walk = day["walking-intervals-time"];
+  const intervals = day["number-of-intervals"];
+
+  if (walk === 0 || !walk) {
+    return `${jog}min jog`;
+  }
+
+  if (intervals === 1) {
+    return `${jog}min jog / ${walk}min walk`;
+  }
+
+  return `${intervals} × (${jog}min jog / ${walk}min walk)`;
+}
+
 function buildInstructions(context: CoachContext): string {
-  const { goal, plan, progress, currentWeek, conversationHistory } = context;
+  const { goal, plan, progress, currentWeek } = context;
 
   const weekSummaries = calculateWeekSummaries(plan, progress);
   const recentWeeks = weekSummaries.filter(
@@ -102,15 +118,31 @@ function buildInstructions(context: CoachContext): string {
     })
     .join("\n");
 
+  // Build a summary of the current plan structure for reference
+  const planStructure = plan.weeks
+    .map((week) => {
+      const daysSummary = week.days
+        .map((day) => `${day.day}: ${day.distance}km, ${formatIntervals(day)}`)
+        .join("; ");
+      return `Week ${week.id}: ${daysSummary}`;
+    })
+    .join("\n");
+
+  // Parse target distance to get the numeric value
+  const targetDistanceKm = parseFloat(goal.distance.replace(/[^0-9.]/g, "")) || 10;
+
   return `You are a supportive running coach helping a user stick to their training plan.
 
 USER'S GOAL:
-- Target: ${goal.distance}
+- Target: ${goal.distance} (${targetDistanceKm}km)
 - Timeline: ${goal.weeks} weeks
 - Ability: ${goal.ability}
 - Training frequency: ${goal.frequency} days/week
 ${goal.injuries ? `- Known injuries/conditions: ${goal.injuries}` : ""}
 ${goal.unavailableDays?.length ? `- Can't train on: ${goal.unavailableDays.join(", ")}` : ""}
+
+CURRENT PLAN STRUCTURE:
+${planStructure}
 
 CURRENT PROGRESS:
 - Currently on week ${currentWeek} of ${plan.weeks.length}
@@ -122,13 +154,68 @@ YOUR CAPABILITIES:
 3. ENCOURAGE: Celebrate wins, provide motivation, help users stay on track
 4. MODIFY: Suggest plan adjustments when appropriate (making it easier or harder)
 
-CRITICAL RULES FOR PLAN MODIFICATIONS:
+=== CRITICAL RULES FOR PLAN MODIFICATIONS ===
+
+CONFIRMATION REQUIRED:
 - NEVER include a planModification object unless the user has EXPLICITLY confirmed they want changes
 - First, DESCRIBE what changes you would suggest and ask if they want you to make those changes
 - Only after they say "yes", "do it", "make those changes", etc., include the planModification
-- When modifying, generate complete replacement weeks from the specified fromWeekId onwards
-- Modifications should be progressive - gradually increase/decrease intensity
-- Respect the user's goal timeline when possible
+
+=== WEEK COMPLETENESS REQUIREMENT - VERY IMPORTANT ===
+When generating proposedWeeks, you MUST include ALL weeks from fromWeekId to week ${plan.weeks.length} (the final week).
+
+Example: If the plan has 8 weeks and fromWeekId is 3, proposedWeeks MUST contain weeks 3, 4, 5, 6, 7, AND 8.
+- Even if you're only changing week 3, you must still include weeks 4-8 unchanged
+- The final week (week ${plan.weeks.length}) MUST always be included
+- Missing weeks will cause the plan to be incomplete
+
+This is MANDATORY. Do not return partial week lists.
+
+=== WORKOUT STRUCTURE CONSTRAINT ===
+Each day uses IDENTICAL repeating intervals. You CANNOT express variable or mixed patterns.
+
+The schema requires:
+- "jogging-interval-time": Duration of EACH jog interval (same for all)
+- "walking-intervals-time": Duration of EACH walk interval (same for all, or 0 for continuous)
+- "number-of-intervals": How many times the jog/walk pattern repeats
+
+VALID EXAMPLES:
+- 3 × (8min jog + 2min walk): jogging-interval-time: 8, walking-intervals-time: 2, number-of-intervals: 3
+- Continuous 30-minute run: jogging-interval-time: 30, walking-intervals-time: 0, number-of-intervals: 1
+- 5 × (5min jog + 1min walk): jogging-interval-time: 5, walking-intervals-time: 1, number-of-intervals: 5
+
+INVALID (cannot be expressed):
+- "20min jog, 2min walk, then 10min jog" ✗ (variable jog times)
+- "32min jog with 2×2min walk breaks embedded" ✗ (breaks within jog)
+- "warm-up, main set, cool-down" ✗ (different segment types)
+
+If you want to suggest a workout with variable structure, approximate it with uniform intervals.
+Example: Instead of "20min jog, 2min walk, 10min jog", use "2 × (15min jog + 1min walk)"
+
+EVERY day MUST have these exact fields:
+- "id": number (day number within the week, e.g., 1, 2, 3)
+- "day": string (e.g., "Monday", "Wednesday", "Friday")
+- "distance": number >= 0.1 (distance in km, minimum 0.1)
+- "jogging-interval-time": number >= 1 (minutes per jog interval)
+- "walking-intervals-time": number >= 0 (minutes per walk interval, 0 for continuous)
+- "number-of-intervals": number >= 1 (how many times the pattern repeats)
+- "instructions": array of strings (tips for the run)
+
+PLAN INTEGRITY - THESE RULES ARE MANDATORY:
+1. THE FINAL WEEK MUST REACH THE TARGET DISTANCE (${goal.distance} = ${targetDistanceKm}km)
+   - The last week's longest run MUST be at least ${targetDistanceKm}km
+   - You can adjust the path to get there, but NEVER reduce the final goal
+   - If making the plan easier, spread out the progression but still end at ${targetDistanceKm}km
+
+2. PROGRESSIVE STRUCTURE:
+   - Each week should build on the previous one
+   - Distances should generally increase week over week toward the goal
+   - Early weeks can have more walk breaks; later weeks transition to continuous running
+
+3. DAY STRUCTURE:
+   - Keep the same training days (e.g., Monday, Wednesday, Friday)
+   - Each day must have: id, day, distance, jogging-interval-time, walking-intervals-time, number-of-intervals, instructions
+   - Instructions should be an array of helpful tips for that specific run
 
 RESPONSE TYPES:
 - "chat": General conversation, questions, acknowledgments
@@ -136,11 +223,6 @@ RESPONSE TYPES:
 - "tip": When giving specific advice about training, recovery, technique
 - "encouragement": When celebrating achievements or motivating
 - "modification": When proposing or delivering plan changes
-
-When generating modified weeks, follow this structure for each day:
-- Keep the same day names (e.g., "Monday", "Wednesday")
-- Adjust distances, intervals, and instructions based on the modification type
-- Maintain progressive overload principles (gradual increases)
 
 Be conversational, supportive, and specific. Reference actual data from their progress when relevant.`;
 }
@@ -152,6 +234,31 @@ function createCoachAgent(context: CoachContext) {
     outputType: CoachResponseSchema,
   });
 }
+
+// Sanitize plan modification to ensure all values meet minimum requirements
+function sanitizePlanModification(
+  modification: z.infer<typeof CoachResponseSchema>["planModification"]
+): z.infer<typeof CoachResponseSchema>["planModification"] {
+  if (!modification) return null;
+
+  return {
+    ...modification,
+    proposedWeeks: modification.proposedWeeks.map((week) => ({
+      ...week,
+      days: week.days.map((day) => ({
+        ...day,
+        distance: Math.max(0.1, day.distance || 0.1),
+        "jogging-interval-time": Math.max(1, day["jogging-interval-time"] || 1),
+        "walking-intervals-time": Math.max(0, day["walking-intervals-time"] || 0),
+        "number-of-intervals": Math.max(1, day["number-of-intervals"] || 1),
+        instructions: day.instructions || [],
+      })),
+    })),
+  };
+}
+
+// Error message prefix for schema validation failures (detectable in client)
+const SCHEMA_VALIDATION_ERROR_PREFIX = "[COACH_SCHEMA_ERROR]";
 
 export async function processCoachConversation(
   context: CoachContext,
@@ -168,20 +275,33 @@ export async function processCoachConversation(
     ? `${historyText}\n\nUser: ${userMessage}\n\nRespond as the Coach.`
     : `User: ${userMessage}\n\nRespond as the Coach.`;
 
-  const result = await run(agent, prompt);
+  try {
+    const result = await run(agent, prompt);
 
-  if (result.finalOutput) {
-    const output = result.finalOutput as z.infer<typeof CoachResponseSchema>;
+    if (result.finalOutput) {
+      const output = result.finalOutput as z.infer<typeof CoachResponseSchema>;
 
-    return {
-      reply: output.reply,
-      responseType: output.responseType,
-      planModification: output.planModification ?? null,
-      insights: output.insights,
-    };
+      // Sanitize the plan modification to ensure valid values
+      const sanitizedModification = sanitizePlanModification(output.planModification);
+
+      return {
+        reply: output.reply,
+        responseType: output.responseType,
+        planModification: sanitizedModification,
+        insights: output.insights,
+      };
+    }
+
+    throw new Error("Failed to get response from coach agent");
+  } catch (error) {
+    // Check if this is a schema validation error and wrap with identifiable prefix
+    if (error instanceof Error && error.message.includes("schema validation")) {
+      throw new Error(
+        `${SCHEMA_VALIDATION_ERROR_PREFIX} The coach generated an invalid plan. Please try your request again.`
+      );
+    }
+    throw error;
   }
-
-  throw new Error("Failed to get response from coach agent");
 }
 
 export async function generateWeeklyEvaluation(

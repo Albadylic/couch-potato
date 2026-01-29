@@ -2,12 +2,29 @@
 
 import { useState } from "react";
 import { PlanModificationProposal } from "@/types/coach";
+import { DayType } from "@/types/week";
 
 type Props = {
   modification: PlanModificationProposal;
   onAccept: () => void;
   onReject: () => void;
 };
+
+function formatIntervals(day: DayType): string {
+  const jog = day["jogging-interval-time"];
+  const walk = day["walking-intervals-time"];
+  const intervals = day["number-of-intervals"];
+
+  if (walk === 0 || !walk) {
+    return `${jog}min jog`;
+  }
+
+  if (intervals === 1) {
+    return `${jog}min jog / ${walk}min walk`;
+  }
+
+  return `${intervals} × (${jog}min jog / ${walk}min walk)`;
+}
 
 export default function PlanModificationCard({
   modification,
@@ -93,11 +110,7 @@ export default function PlanModificationCard({
                         <span className="font-medium w-20">{day.day}</span>
                         <span>{day.distance}km</span>
                         <span className="text-gray-400">|</span>
-                        <span>
-                          {day["number-of-intervals"]}x{" "}
-                          {day["jogging-interval-time"]}min jog /{" "}
-                          {day["walking-intervals-time"]}min walk
-                        </span>
+                        <span>{formatIntervals(day)}</span>
                       </div>
                     ))}
                   </div>

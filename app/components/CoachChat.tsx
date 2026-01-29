@@ -48,7 +48,7 @@ export default function CoachChat({
   const [messages, setMessages] = useState<CoachMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
+  const hasInitializedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -69,8 +69,8 @@ export default function CoachChat({
       loadedMessages.length === 0 ||
       (triggerType === "week_complete" && completedWeekId !== undefined);
 
-    if (shouldAutoMessage && !hasInitialized) {
-      setHasInitialized(true);
+    if (shouldAutoMessage && !hasInitializedRef.current) {
+      hasInitializedRef.current = true;
 
       if (triggerType === "week_complete" && completedWeekId !== undefined) {
         // Auto-request week evaluation
@@ -80,7 +80,7 @@ export default function CoachChat({
         handleInitialGreeting();
       }
     } else {
-      setHasInitialized(true);
+      hasInitializedRef.current = true;
     }
   }, [planId, triggerType, completedWeekId]);
 
@@ -190,9 +190,19 @@ export default function CoachChat({
       setMessages((prev) => [...prev, coachMessage]);
     } catch (error) {
       console.error("Failed to send message:", error);
+
+      // Check if this is a schema validation error (plan generation failed)
+      const isSchemaError = error instanceof Error &&
+        (error.message.includes("schema validation") ||
+         error.message.includes("[COACH_SCHEMA_ERROR]"));
+
+      const errorContent = isSchemaError
+        ? "I had trouble generating a valid plan modification. Could you please try your request again? If the problem persists, try being more specific about what changes you'd like."
+        : "Sorry, I had trouble responding. Please try again.";
+
       const errorMessage = saveCoachMessage(planId, {
         role: "coach",
-        content: "Sorry, I had trouble responding. Please try again.",
+        content: errorContent,
       });
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
