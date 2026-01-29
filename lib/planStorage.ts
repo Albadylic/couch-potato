@@ -144,3 +144,78 @@ export function getPlanProgress(plan: SavedPlan): { completed: number; missed: n
 
   return { completed, missed, total };
 }
+
+export type WeekCompletionStatus = {
+  isComplete: boolean;
+  isLastDayJustCompleted: boolean;
+  completedDays: number;
+  totalDays: number;
+};
+
+export function getWeekCompletionStatus(
+  plan: Plan,
+  progress: Record<string, ProgressValue>,
+  weekId: number
+): WeekCompletionStatus {
+  const week = plan.weeks.find((w) => w.id === weekId);
+  if (!week) {
+    return { isComplete: false, isLastDayJustCompleted: false, completedDays: 0, totalDays: 0 };
+  }
+
+  const totalDays = week.days.length;
+  let completedDays = 0;
+  let lastDayHasStatus = false;
+
+  for (const day of week.days) {
+    const key = getProgressKey(week.id, day.id);
+    const dayProgress = normalizeProgress(progress[key]);
+    if (dayProgress) {
+      completedDays++;
+      if (day.id === week.days[week.days.length - 1].id) {
+        lastDayHasStatus = true;
+      }
+    }
+  }
+
+  const isComplete = completedDays === totalDays;
+
+  return {
+    isComplete,
+    isLastDayJustCompleted: isComplete && lastDayHasStatus,
+    completedDays,
+    totalDays,
+  };
+}
+
+export function getCurrentWeek(plan: Plan, progress: Record<string, ProgressValue>): number {
+  for (const week of plan.weeks) {
+    const status = getWeekCompletionStatus(plan, progress, week.id);
+    if (!status.isComplete) {
+      return week.id;
+    }
+  }
+  // All weeks complete, return the last week
+  return plan.weeks[plan.weeks.length - 1]?.id ?? 1;
+}
+
+export function updatePlanWeeks(
+  planId: string,
+  newWeeks: Plan["weeks"],
+  fromWeekId: number
+): void {
+  const plans = getAllPlans();
+  const planIndex = plans.findIndex((p) => p.id === planId);
+
+  if (planIndex === -1) return;
+
+  const existingWeeks = plans[planIndex].plan.weeks;
+
+  // Keep weeks before fromWeekId, replace with newWeeks from that point
+  const updatedWeeks = [
+    ...existingWeeks.filter((w) => w.id < fromWeekId),
+    ...newWeeks,
+  ];
+
+  plans[planIndex].plan.weeks = updatedWeeks;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+}
