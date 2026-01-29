@@ -18,9 +18,10 @@ type Props = {
   plan: Plan;
   goal: SavedPlanGoal;
   existingPlanId?: string;
+  onProgressUpdate?: (weekId: number, dayId: number) => void;
 };
 
-export default function PlanViewerWithStorage({ plan, goal, existingPlanId }: Props) {
+export default function PlanViewerWithStorage({ plan, goal, existingPlanId, onProgressUpdate }: Props) {
   const router = useRouter();
   const [planId, setPlanId] = useState<string | null>(existingPlanId ?? null);
   const [progress, setProgress] = useState<Record<string, ProgressValue>>({});
@@ -51,6 +52,7 @@ export default function PlanViewerWithStorage({ plan, goal, existingPlanId }: Pr
     const key = getProgressKey(weekId, dayId);
     setProgress((prev) => ({ ...prev, [key]: feedback }));
     updatePlanProgress(id, weekId, dayId, feedback);
+    onProgressUpdate?.(weekId, dayId);
   };
 
   if (isLoading) {
