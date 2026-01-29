@@ -13,6 +13,8 @@ import { Plan } from "@/types/week";
 import PlanViewerWithStorage from "@/app/components/PlanViewerWithStorage";
 import CoachChatButton from "@/app/components/CoachChatButton";
 import CoachChat from "@/app/components/CoachChat";
+import LoadingPotato from "@/app/components/LoadingPotato";
+import { PotatoFlexing, PotatoMascot } from "@/app/components/PotatoMascot";
 
 export default function SavedPlanPage() {
   const params = useParams();
@@ -97,7 +99,7 @@ export default function SavedPlanPage() {
   if (loading) {
     return (
       <main className="max-w-5xl mx-auto py-12 px-4">
-        <p className="text-center">Loading plan...</p>
+        <LoadingPotato message="Loading your plan..." />
       </main>
     );
   }
@@ -105,11 +107,12 @@ export default function SavedPlanPage() {
   if (!savedPlan) {
     return (
       <main className="max-w-5xl mx-auto py-12 px-4 text-center">
-        <h1 className="text-2xl font-bold mb-4">Plan Not Found</h1>
-        <p className="text-gray-600 mb-6">This plan doesn&apos;t exist or may have been deleted.</p>
+        <PotatoMascot size={100} className="mx-auto mb-6" />
+        <h1 className="text-2xl font-bold mb-4 text-stone-dark">Plan Not Found</h1>
+        <p className="text-stone mb-6">This plan doesn&apos;t exist or may have been deleted.</p>
         <Link
           href="/plans"
-          className="inline-block px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+          className="btn-primary inline-block"
         >
           View All Plans
         </Link>
@@ -121,42 +124,28 @@ export default function SavedPlanPage() {
     <main className="max-w-5xl mx-auto py-12 px-4">
       {/* Week Completion Evaluation Prompt */}
       {showEvaluationPrompt && completedWeekId !== undefined && (
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+        <div className="mb-6 bg-success-light border-2 border-sage rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
+            <PotatoFlexing size={50} />
             <div>
-              <p className="font-medium text-blue-900">
+              <p className="font-medium text-stone-dark">
                 Week {completedWeekId} Complete!
               </p>
-              <p className="text-sm text-blue-700">
-                Would you like your coach to evaluate your performance?
+              <p className="text-sm text-stone">
+                Would you like Coach Spud to evaluate your performance?
               </p>
             </div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={handleOpenEvaluation}
-              className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-sage-dark text-white text-sm font-medium rounded-full hover:bg-sage transition-colors"
             >
               Get Evaluation
             </button>
             <button
               onClick={handleDismissPrompt}
-              className="px-4 py-2 text-blue-600 text-sm font-medium hover:bg-blue-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-stone text-sm font-medium hover:bg-stone-light rounded-full transition-colors"
             >
               Maybe Later
             </button>
@@ -165,12 +154,12 @@ export default function SavedPlanPage() {
       )}
 
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-stone-dark">
           {savedPlan.goal.distance} in {savedPlan.goal.weeks} weeks
         </h1>
         <Link
           href="/plans"
-          className="text-sm text-gray-500 hover:text-black"
+          className="text-sm text-stone hover:text-stone-dark transition-colors"
         >
           All Plans
         </Link>

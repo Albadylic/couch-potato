@@ -1,21 +1,55 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Earthy, muted color palette */
+  --background: #FDF8F3;
+  --foreground: #3D3229;
+
+  /* Potato colors */
+  --potato-body: #E8D5B7;
+  --potato-spots: #C4A574;
+  --potato-outline: #5D4E37;
+  --potato-blush: #E8B4B4;
+
+  /* UI colors */
+  --cream: #FDF8F3;
+  --cream-dark: #F5EDE3;
+  --stone-light: #E8E0D5;
+  --stone: #9C8B7A;
+  --stone-dark: #5D4E37;
+  --sage: #A8B5A0;
+  --sage-dark: #7A8A70;
+
+  /* Status colors - muted versions */
+  --success: #A8B5A0;
+  --success-light: #E8EFE5;
+  --warning: #E8C9A0;
+  --warning-light: #FDF5EB;
+  --error: #D4A5A5;
+  --error-light: #F9EDED;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-cream: var(--cream);
+  --color-cream-dark: var(--cream-dark);
+  --color-stone-light: var(--stone-light);
+  --color-stone: var(--stone);
+  --color-stone-dark: var(--stone-dark);
+  --color-sage: var(--sage);
+  --color-sage-dark: var(--sage-dark);
+  --color-potato-body: var(--potato-body);
+  --color-potato-outline: var(--potato-outline);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* Keep light mode only for this fun app */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #FDF8F3;
+    --foreground: #3D3229;
   }
 }
 
@@ -23,4 +57,120 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Custom button styles */
+.btn-primary {
+  background-color: var(--stone-dark);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--potato-outline);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--cream-dark);
+  color: var(--stone-dark);
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  border: 2px solid var(--stone-light);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--stone);
+  background-color: var(--stone-light);
+}
+
+/* Card styles */
+.card {
+  background-color: white;
+  border: 2px solid var(--stone-light);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--stone);
+  box-shadow: 0 4px 12px rgba(93, 78, 55, 0.1);
+}
+
+/* Wave animation for potato arm */
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(20deg); }
+  75% { transform: rotate(-10deg); }
+}
+
+.wave-arm {
+  animation: wave 1s ease-in-out infinite;
+  transform-origin: 92px 55px;
+}
+
+/* Bounce animation enhancement */
+@keyframes potato-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-potato-bounce {
+  animation: potato-bounce 0.6s ease-in-out infinite;
+}
+
+/* Pulse glow for coach button */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(232, 213, 183, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(232, 213, 183, 0);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Status badge styles */
+.status-completed {
+  background-color: var(--success-light);
+  border-color: var(--success);
+  color: var(--sage-dark);
+}
+
+.status-missed {
+  background-color: var(--warning-light);
+  border-color: var(--warning);
+  color: #8B7355;
+}
+
+.status-pending {
+  background-color: var(--cream-dark);
+  border-color: var(--stone-light);
+  color: var(--stone);
+}
+
+/* Input focus styles */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--potato-body) !important;
+  box-shadow: 0 0 0 3px rgba(232, 213, 183, 0.4);
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--potato-body);
+  color: var(--stone-dark);
 }
