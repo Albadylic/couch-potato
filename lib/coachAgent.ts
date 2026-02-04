@@ -8,6 +8,7 @@ import {
   CoachAgentResponse,
 } from "@/types/coach";
 import { calculateWeekSummaries } from "@/lib/coachUtils";
+import { DaySchema, WeekSchema } from "@/lib/planSchema";
 
 const PlanChangeSchema = z.object({
   type: z.enum([
@@ -21,21 +22,6 @@ const PlanChangeSchema = z.object({
   ]),
   description: z.string(),
   affectedWeeks: z.array(z.number()),
-});
-
-const DaySchema = z.object({
-  id: z.number(),
-  day: z.string(),
-  distance: z.number().min(0.1).describe("Distance in km - must be positive"),
-  "jogging-interval-time": z.number().min(1).describe("Duration of EACH jog interval in minutes (same for all intervals)"),
-  "walking-intervals-time": z.number().min(0).describe("Duration of EACH walk interval in minutes (same for all, or 0 for continuous)"),
-  "number-of-intervals": z.number().min(1).describe("How many times the jog/walk pattern repeats"),
-  instructions: z.array(z.string()).describe("Array of helpful instructions for this run"),
-});
-
-const WeekSchema = z.object({
-  id: z.number(),
-  days: z.array(DaySchema),
 });
 
 const CoachResponseSchema = z.object({

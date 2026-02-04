@@ -56,6 +56,33 @@ export default function PlanViewer({
   progress = {},
   onUpdateFeedback,
 }: PlanViewerProps) {
+  // Guard against empty plans
+  if (!plan.weeks || plan.weeks.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="inline-block p-4 mb-4 rounded-full bg-gray-100">
+          <svg
+            className="w-12 h-12 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+        </div>
+        <p className="text-stone-dark mb-2 font-medium">No plan available</p>
+        <p className="text-stone text-sm">
+          Your training plan appears to be empty.
+        </p>
+      </div>
+    );
+  }
+
   const [view, setView] = useState<ViewType>("weekly");
   const [currentWeek, setCurrentWeek] = useState(0);
   const [currentDay, setCurrentDay] = useState(0);
